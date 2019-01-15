@@ -1,5 +1,6 @@
 package com.example.androidprocess;
 
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
@@ -17,6 +18,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private boolean mStopLoop;
     private int count = 0;
 
+    private MyAsyncTask myAsyncTask;
     Handler handler;
 
     @Override
@@ -24,11 +26,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Log.i(TAG, "Thread id: "+Thread.currentThread().getId());
+        Log.i(TAG, "Thread id: " + Thread.currentThread().getId());
 
-        btnStartThread  = findViewById(R.id.btn_thread_start);
-        btnStopThread   = findViewById(R.id.btn_thread_stop);
-        tvCount   = findViewById(R.id.tv_count);
+        btnStartThread = findViewById(R.id.btn_thread_start);
+        btnStopThread = findViewById(R.id.btn_thread_stop);
+        tvCount = findViewById(R.id.tv_count);
 
         btnStartThread.setOnClickListener(this);
         btnStopThread.setOnClickListener(this);
@@ -37,74 +39,95 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
 
-
     @Override
     public void onClick(View view) {
-        switch (view.getId()){
+        switch (view.getId()) {
             case R.id.btn_thread_start:
                 mStopLoop = true;
 
-
-                // We cannot update a view from any separate thread , that's why we need to use Handler and Looper
-
+                // now we use AsyncTask for below task
                 /*new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        while (mStopLoop){
+                        while (mStopLoop) {
                             try {
                                 Thread.sleep(1000);
                                 count++;
                             } catch (InterruptedException e) {
                                 Log.i(TAG, e.getMessage());
                             }
-                            tvCount.setText(" "+count);
-                            Log.i(TAG, "Thread id in while loop: "+Thread.currentThread().getId() +", Count : "+count);
-                        }
-                    }
-                }).start(); */
-
-
-                // solution
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        while (mStopLoop){
-                            try {
-                                Thread.sleep(1000);
-                                count++;
-                            } catch (InterruptedException e) {
-                                Log.i(TAG, e.getMessage());
-                            }
-                            Log.i(TAG, "Thread id in while loop: "+Thread.currentThread().getId() +", Count : "+count);
+                            Log.i(TAG, "Thread id in while loop: " + Thread.currentThread().getId() + ", Count : " + count);
 
                             handler.post(new Runnable() {
                                 @Override
                                 public void run() {
-                                    tvCount.setText(" "+count);
-                                    Log.i(TAG, "Thread id within handler: "+Thread.currentThread().getId() +", Count : "+count);
+                                    tvCount.setText(" " + count);
+                                    Log.i(TAG, "Thread id within handler: " + Thread.currentThread().getId() + ", Count : " + count);
                                 }
                             });
 
-                            // Also we can done the above code in this way, for that we do't need any Handler instance
-                           /* tvCount.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    tvCount.setText(" "+count);
-                                    Log.i(TAG, "Thread id within handler: "+Thread.currentThread().getId() +", Count : "+count);
-                                }
-                            });*/
-
                         }
                     }
-                }).start();
+                }).start();*/
 
-
+                 myAsyncTask = new MyAsyncTask();
+                 myAsyncTask.execute(count);
 
                 break;
             case R.id.btn_thread_stop:
-                  mStopLoop = false;
+                //mStopLoop = false;
+                myAsyncTask.cancel(true);
                 break;
         }
     }
+
+    private  class MyAsyncTask extends AsyncTask<Integer, Integer, Integer> { // Generic 1, 2, 3
+
+        private int customCounter;
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            customCounter = 0;
+        }
+
+        @Override
+        protected Integer doInBackground(Integer... integers) { // Generic 1 , Params(Integer)
+            customCounter = integers[0];
+            while (mStopLoop) {
+                try {
+                    Thread.sleep(1000);
+                    customCounter++;
+                    publishProgress(customCounter);    // Generic 2, Progress(Integer)
+                } catch (InterruptedException e) {
+                    Log.i(TAG, e.getMessage());
+                }
+                Log.i(TAG, "Thread id doInBackground(): " + Thread.currentThread().getId() + ", Count : " + customCounter);
+                if (isCancelled()){
+                    break;
+                }
+            }
+            return customCounter;         // Generic 3, Result(Integer)
+        }
+
+        @Override
+        protected void onProgressUpdate(Integer... values) {  // get value from Generic 2
+            super.onProgressUpdate(values);
+            tvCount.setText(" "+values[0]);
+        }
+
+        @Override
+        protected void onPostExecute(Integer integer) {    // get value from doInBackground() return
+            super.onPostExecute(integer);
+            tvCount.setText(" "+integer);
+            count = integer;
+        }
+
+        @Override
+        protected void onCancelled(Integer integer) {
+            super.onCancelled(integer);
+        }
+    }
+
 
 }
