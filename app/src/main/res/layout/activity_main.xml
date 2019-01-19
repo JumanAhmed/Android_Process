@@ -7,6 +7,15 @@
     android:orientation="vertical"
     tools:context=".MainActivity">
 
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp"
+        android:textAlignment="center"
+        android:text="4"
+        android:textSize="30sp"
+        android:id="@+id/tvshow"/>
+
     <Button
         android:id="@+id/btn_thread_start"
         android:layout_width="wrap_content"
