@@ -35,6 +35,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case R.id.btn_thread_start:
                 mStopLoop = true;
 
+                // when we are going to execute below line without any separate thread, we get an error
+                /* while (mStopLoop){
+                    Log.i(TAG, "Thread id in while loop: "+Thread.currentThread().getId());
+                }*/
+
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
